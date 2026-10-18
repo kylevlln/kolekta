@@ -1,0 +1,341 @@
+/* ==========================================================================
+   KOLEKTA — SIDEBAR COMPONENT
+   Responsive, animated navigation rail. Drop-in: .sb-layout wrapper holds
+   the burger + scrim + .sb panel + .sb-main page content.
+
+   States (classes toggled by assets/js/sidebar.js):
+     .is-collapsed on .sb      icon-only rail (manual >1024px, auto <=1024px)
+                                choice is persisted in localStorage
+     .is-peeking  on .sb       hovered/focused icon-only rail slides labels
+                                out OVER the content (no layout shift)
+     .nav-open    on .sb-layout off-canvas drawer (mobile <=860px)
+   Icon-only items show a floating tooltip (.sb-tip, built by sidebar.js).
+
+   Breakpoints — same scale as kolekta.css:
+     >1024px  full labels, manual collapse toggle
+     <=1024px auto icon-only (CSS only, toggle hidden)
+     <=860px  off-canvas drawer + hamburger + scrim
+     <=520px  tighter drawer
+
+   Colors: existing tokens only — --paper --ink --ink-2 --muted --cream
+     --cream-2 --hairline --hairline-2 --brass --brass-soft --evergreen
+     --rust --white --fern --shadow-1 --shadow-2 --radius --side-w
+   Motion: .15s/.18s micro-interactions, .25s structure (as kolekta.css),
+     structural moves use --sb-ease (Material standard curve)
+   Reduced motion: covered globally by kolekta.css.
+   ========================================================================== */
+
+/* ------------------------------------------------------------- layout */
+.sb-layout{display:flex;align-items:stretch;min-height:100vh}
+
+.sb{
+  /* state vars — rewritten by .is-collapsed, .is-peeking and breakpoints */
+  --sb-ease:cubic-bezier(.4,0,.2,1);
+  --sb-w:var(--side-w);   /* panel width          */
+  --sb-x:18px;            /* panel inline padding */
+  --sb-lx:12px;           /* item inline padding  */
+  --sb-gap:13px;          /* icon <-> label gap   */
+  --sb-op:1;              /* label opacity        */
+  --sb-lw:240px;          /* label max-width      */
+  --sb-tx:0px;            /* label slide offset   */
+  --sb-just:flex-start;   /* item alignment       */
+  --sb-cml:auto;          /* count margin-left    */
+  --sb-ws:normal;         /* label white-space    */
+  --sb-sec-h:18px;        /* section label height */
+  --sb-sec-mt:16px;
+  --sb-sec-mb:4px;
+
+  flex:0 0 auto;
+  width:var(--sb-w);
+  height:100vh;
+  position:sticky;top:0;
+  display:flex;flex-direction:column;
+  padding:26px var(--sb-x) 22px;
+  background:var(--paper);
+  border-right:1px solid var(--hairline-2);
+  overflow:hidden;
+  transition:width .25s var(--sb-ease),padding .25s var(--sb-ease),
+             margin-right .25s var(--sb-ease),box-shadow .25s var(--sb-ease);
+}
+
+.sb-main{flex:1 1 auto;min-width:0}
+
+/* triggers — revealed at <=860px */
+.sb-burger{display:none}
+.sb-scrim{display:none}
+
+/* ----------------------------------------------------------- brand row */
+.sb-head{display:flex;align-items:center;gap:4px;min-height:30px;margin-bottom:36px}
+
+.sb-brand{
+  flex:1 1 auto;min-width:0;
+  display:flex;align-items:center;
+  gap:var(--sb-gap);
+  justify-content:var(--sb-just);
+  overflow:hidden;
+}
+.sb-brand .wordmark--mark{flex:0 0 auto}
+.sb-brand .wordmark--word{
+  max-width:var(--sb-lw);
+  opacity:var(--sb-op);
+  overflow:hidden;
+  transition:opacity .18s ease,max-width .25s ease;
+}
+
+/* collapse toggle — desktop only (hidden <=1024px) */
+.sb-collapse{
+  flex:0 0 auto;width:28px;height:28px;
+  display:grid;place-items:center;
+  border:1px solid var(--hairline-2);border-radius:8px;
+  background:var(--paper);color:var(--muted);
+  transition:border-color .15s ease,background-color .15s ease,color .15s ease;
+}
+.sb-collapse:hover{border-color:var(--hairline);background:var(--cream-2);color:var(--ink)}
+.sb-collapse svg{width:15px;height:15px;transition:transform .18s ease}
+.sb.is-collapsed .sb-collapse svg{transform:rotate(180deg)}
+
+/* ----------------------------------------------------------------- nav */
+.sb-nav{
+  flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:column;gap:3px;
+  overflow-y:auto;overscroll-behavior:contain;
+}
+
+.sb-section{
+  display:flex;align-items:center;
+  height:var(--sb-sec-h);
+  margin-top:var(--sb-sec-mt);
+  margin-bottom:var(--sb-sec-mb);
+  padding:0 12px;
+  overflow:hidden;
+  font-family:var(--font-mono);font-size:10.5px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  opacity:var(--sb-op);
+  transition:opacity .18s ease,height .25s ease,margin .25s ease;
+}
+
+.sb-link{
+  position:relative;
+  display:flex;align-items:center;
+  gap:var(--sb-gap);
+  justify-content:var(--sb-just);
+  min-height:44px;
+  padding:6px var(--sb-lx);
+  border:1px solid transparent;
+  border-radius:var(--radius);
+  font-size:13.5px;font-weight:520;line-height:1.45;
+  color:var(--ink-2);
+  transition:background-color .15s ease,color .15s ease,
+             gap .25s ease,padding .25s ease;
+}
+.sb-link > svg{width:17px;height:17px;flex:0 0 auto;opacity:.85;transition:opacity .15s ease}
+.sb-link:hover{background:var(--cream-2);color:var(--ink)}
+.sb-link:hover > svg{opacity:1}
+
+/* active item: accent bar + background highlight */
+.sb-link::before{
+  content:"";
+  position:absolute;left:0;top:50%;
+  width:3px;height:20px;border-radius:999px;
+  background:var(--brass);
+  opacity:0;
+  transform:translateY(-50%) scaleY(0);
+  transition:transform .18s ease,opacity .15s ease;
+}
+.sb-link.active{background:var(--brass-soft);color:var(--evergreen);font-weight:560}
+.sb-link.active > svg{opacity:1;color:var(--brass)}
+.sb-link.active::before{opacity:1;transform:translateY(-50%) scaleY(1)}
+
+.sb-label{
+  min-width:0;
+  max-width:var(--sb-lw);
+  overflow:hidden;
+  white-space:var(--sb-ws);
+  opacity:var(--sb-op);
+  transform:translateX(var(--sb-tx));
+  transition:opacity .18s ease,max-width .25s var(--sb-ease),
+             transform .25s var(--sb-ease);
+}
+
+.sb-count{
+  flex:0 0 auto;
+  margin-left:var(--sb-cml);
+  font-family:var(--font-mono);font-size:10.5px;font-weight:600;line-height:1.6;
+  background:var(--cream-2);color:var(--ink-2);
+  border-radius:999px;padding:1px 8px;
+  transition:margin .25s ease;
+}
+.sb-count.hot{background:var(--rust);color:var(--white)}
+
+/* ----------------------------------------------------- profile + foot */
+.sb-foot{
+  margin-top:14px;padding-top:14px;
+  border-top:1px solid var(--hairline-2);
+  display:flex;flex-direction:column;gap:2px;
+}
+
+.sb-user{
+  display:flex;align-items:center;
+  gap:var(--sb-gap);
+  justify-content:var(--sb-just);
+  min-width:0;padding:4px 6px 10px;
+}
+.sb-avatar{
+  width:38px;height:38px;flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:var(--brass);color:var(--paper);
+  font-family:var(--font-display);font-size:16px;font-weight:560;
+}
+.sb-avatar.admin-av{background:var(--rust)}
+.sb-user-text{
+  display:flex;flex-direction:column;min-width:0;
+  max-width:var(--sb-lw);
+  opacity:var(--sb-op);
+  overflow:hidden;
+  transition:opacity .18s ease,max-width .25s ease;
+}
+.sb-user-text b{font-size:13px;font-weight:580;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-text span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.sb-mini{
+  display:flex;align-items:center;
+  gap:var(--sb-gap);
+  justify-content:var(--sb-just);
+  width:100%;min-height:44px;
+  padding:0 var(--sb-lx);
+  border:1px solid transparent;border-radius:var(--radius);
+  font-size:12.5px;font-weight:500;color:var(--muted);
+  text-align:left;
+  transition:background-color .15s ease,color .15s ease,
+             gap .25s ease,padding .25s ease;
+}
+.sb-mini:hover{background:var(--cream-2);color:var(--evergreen)}
+.sb-mini > svg{width:14px;height:14px;flex:0 0 auto;opacity:.85}
+
+/* -------------------------------------------------------------- focus */
+.sb a:focus-visible,.sb button:focus-visible,.sb-burger:focus-visible{
+  outline:2px solid var(--fern);outline-offset:2px;
+}
+
+/* ============================================ desktop: manual collapse */
+.sb.is-collapsed{
+  --sb-w:80px;--sb-x:10px;--sb-lx:4px;--sb-gap:0px;
+  --sb-op:0;--sb-lw:0px;--sb-tx:-6px;--sb-just:center;--sb-cml:4px;--sb-ws:nowrap;
+  --sb-sec-h:0px;--sb-sec-mt:0px;--sb-sec-mb:0px;
+}
+
+/* ================================================= tablet: auto icon-only */
+@media(max-width:1024px){
+  .sb,.sb.is-collapsed{
+    --sb-w:80px;--sb-x:10px;--sb-lx:4px;--sb-gap:0px;
+    --sb-op:0;--sb-lw:0px;--sb-tx:-6px;--sb-just:center;--sb-cml:4px;--sb-ws:nowrap;
+    --sb-sec-h:0px;--sb-sec-mt:0px;--sb-sec-mb:0px;
+  }
+  .sb-collapse{display:none}
+}
+
+/* =================================================== mobile: off-canvas */
+@media(max-width:860px){
+  body.nav-locked{overflow:hidden}
+
+  /* hamburger */
+  .sb-burger{
+    display:grid;place-items:center;
+    position:fixed;z-index:94;
+    top:calc(14px + env(safe-area-inset-top,0px));
+    left:calc(14px + env(safe-area-inset-left,0px));
+    width:46px;height:46px;
+    border:1px solid var(--hairline);border-radius:50%;
+    background:var(--paper);color:var(--ink-2);
+    box-shadow:var(--shadow-1);
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .sb-burger:hover{border-color:var(--ink);color:var(--ink)}
+  .sb-burger svg{width:20px;height:20px}
+  .sb-burger .sb-burger-close{display:none}
+  .nav-open .sb-burger{border-color:var(--hairline);color:var(--ink)}
+  .nav-open .sb-burger .sb-burger-menu{display:none}
+  .nav-open .sb-burger .sb-burger-close{display:block}
+
+  /* scrim */
+  .sb-scrim{
+    display:block;position:fixed;inset:0;z-index:92;
+    background:var(--ink);
+    opacity:0;visibility:hidden;
+    transition:opacity .25s ease,visibility 0s linear .25s;
+  }
+  .nav-open .sb-scrim{
+    opacity:.45;visibility:visible;
+    transition:opacity .25s ease,visibility 0s linear 0s;
+  }
+
+  /* drawer — slide on transform, always expanded inside */
+  .sb,.sb.is-collapsed{
+    --sb-w:min(300px,86vw);
+    --sb-x:18px;--sb-lx:12px;--sb-gap:13px;
+    --sb-op:1;--sb-lw:240px;--sb-just:flex-start;--sb-cml:auto;--sb-ws:normal;
+    --sb-sec-h:18px;--sb-sec-mt:16px;--sb-sec-mb:4px;
+
+    position:fixed;top:0;bottom:0;left:0;
+    height:auto;
+    z-index:93;
+    transform:translateX(-100%);
+    visibility:hidden;
+    box-shadow:var(--shadow-2);
+    padding-top:calc(26px + env(safe-area-inset-top,0px));
+    padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));
+    padding-left:calc(var(--sb-x) + env(safe-area-inset-left,0px));
+    transition:transform .25s ease,visibility 0s linear .25s;
+  }
+  .nav-open .sb{
+    transform:translateX(0);visibility:visible;
+    transition:transform .25s ease,visibility 0s linear 0s;
+  }
+
+  /* room for the fixed hamburger above the page head */
+  .sb-main .main{padding-top:calc(72px + env(safe-area-inset-top,0px))}
+}
+
+/* ============================================= small phones (<=520px) */
+@media(max-width:520px){
+  .sb,.sb.is-collapsed{--sb-w:min(284px,88vw)}
+}
+
+/* ================================== hover-peek: icon-only rail expands
+   over the content. width grows to --side-w while margin-right pulls back
+   by the same delta, so the flex line stays 80px wide and .sb-main never
+   moves. Declared AFTER the breakpoint blocks above to win ties on
+   equal specificity. Only >=861px (below that it's the drawer). */
+@media(min-width:861px){
+  .sb.is-peeking{
+    --sb-w:var(--side-w);
+    --sb-x:18px;--sb-lx:12px;--sb-gap:13px;
+    --sb-op:1;--sb-lw:240px;--sb-tx:0px;
+    --sb-just:flex-start;--sb-cml:auto;--sb-ws:normal;
+    --sb-sec-h:18px;--sb-sec-mt:16px;--sb-sec-mb:4px;
+
+    margin-right:calc(80px - var(--side-w));
+    z-index:60;
+    box-shadow:var(--shadow-2);
+  }
+}
+
+/* --------------------------------------------------- floating tooltip
+   Built/positioned by sidebar.js; .sb has overflow:hidden, so it lives
+   on <body> instead of inside the rail. */
+.sb-tip{
+  position:fixed;z-index:130;
+  padding:6px 10px;
+  border-radius:8px;
+  background:var(--ink);color:var(--paper);
+  font-size:12px;font-weight:520;line-height:1.35;
+  white-space:nowrap;max-width:240px;
+  overflow:hidden;text-overflow:ellipsis;
+  box-shadow:var(--shadow-2);
+  opacity:0;
+  transform:translateY(-50%) translateX(-4px);
+  pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease;
+}
+.sb-tip.is-on{opacity:1;transform:translateY(-50%) translateX(0)}
