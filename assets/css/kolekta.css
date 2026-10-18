@@ -576,16 +576,17 @@ textarea.input{resize:vertical;min-height:84px;line-height:1.55}
 .next-hint b{color:var(--paper);font-weight:600}
 
 /* waste chips picker (report form) */
-.pick{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.pick{display:flex;gap:6px}
+.pick-opt{flex:1}
 .pick-opt{position:relative}
 .pick-opt input{position:absolute;opacity:0;pointer-events:none}
 .pick-opt .lbl{
-  display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;text-align:center;
+  display:flex;align-items:center;justify-content:center;text-align:center;
   border:1px solid var(--hairline);background:var(--white);
-  border-radius:var(--radius);padding:13px 8px;
-  font-size:12.5px;font-weight:560;color:var(--ink-2);
+  border-radius:999px;padding:8px 12px;
+  font-size:13px;font-weight:560;color:var(--ink-2);
   cursor:pointer;transition:border-color .15s,background .15s,color .15s;
-  min-height:66px;
+  min-height:38px;
 }
 .pick-opt .lbl svg{width:19px;height:19px;margin-bottom:4px;opacity:.85}
 .pick-opt input:checked + .lbl{color:var(--fern);border-color:var(--fern);background:#F0F5EF}

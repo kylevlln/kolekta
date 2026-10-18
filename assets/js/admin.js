@@ -52,6 +52,10 @@ const state = {
   dispatches: [],
   notices: [],
   reports: [],
+  dispatchPage: 1,
+  purokPage: 1,
+  wastePage: 1,
+  pageSize: 8,
   edit: { schedule: null, dispatch: null, notice: null, report: null, purok: null, waste: null },
   confirmCb: null,
 };
@@ -402,10 +406,16 @@ function renderDispatchList() {
     return;
   }
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / state.pageSize));
+  if (state.dispatchPage > totalPages) state.dispatchPage = totalPages;
+  if (state.dispatchPage < 1) state.dispatchPage = 1;
+  const start = (state.dispatchPage - 1) * state.pageSize;
+  const pageRows = rows.slice(start, start + state.pageSize);
+
   el.innerHTML = '<div class="table-wrap"><table class="table"><thead><tr>'
     + '<th>Purok</th><th>Collecting</th><th>Message</th><th>Status</th><th>When</th><th class="ta-r">Actions</th>'
     + '</tr></thead><tbody>'
-    + rows.map((d) => `
+    + pageRows.map((d) => `
       <tr>
         <td><b>${escapeHtml(d.zone_name)}</b> <span class="mono">${escapeHtml(d.zone_code)}</span></td>
         <td>${d.waste_type ? typePill(d.waste_type) : '<span class="muted">Sorted (all)</span>'}</td>
@@ -419,8 +429,16 @@ function renderDispatchList() {
           ${d.status !== 'active' ? `<button class="ic-btn" title="Re-activate" data-act="reactivate-dispatch" data-id="${d.id}">${icon('check')}</button>` : ''}
         </td>
       </tr>`).join('')
-    + '</tbody></table></div>';
+    + '</tbody></table></div>'
+    + `<div class="filter-bar mt-2" style="justify-content:space-between">
+        <button class="btn btn--ghost btn--sm" type="button" ${state.dispatchPage <= 1 ? 'disabled' : ''} onclick="dispatchPrev()">Previous</button>
+        <span class="mono" style="font-size:12px;color:var(--muted)">Page ${state.dispatchPage} of ${Math.max(1, Math.ceil(rows.length / state.pageSize))}</span>
+        <button class="btn btn--ghost btn--sm" type="button" ${state.dispatchPage >= Math.max(1, Math.ceil(rows.length / state.pageSize)) ? 'disabled' : ''} onclick="dispatchNext()">Next</button>
+      </div>`;
 }
+
+function dispatchPrev() { state.dispatchPage = Math.max(1, state.dispatchPage - 1); renderDispatchList(); }
+function dispatchNext() { state.dispatchPage++; renderDispatchList(); }
 
 function openDispatch(id) {
   const d = state.dispatches.find((x) => x.id === id);
@@ -795,10 +813,16 @@ function renderPurokList() {
     el.innerHTML = '<div class="empty">No puroks yet.</div>';
     return;
   }
+  const totalPages = Math.max(1, Math.ceil(state.zones.length / state.pageSize));
+  if (state.purokPage > totalPages) state.purokPage = totalPages;
+  if (state.purokPage < 1) state.purokPage = 1;
+  const start = (state.purokPage - 1) * state.pageSize;
+  const pageRows = state.zones.slice(start, start + state.pageSize);
+
   el.innerHTML = '<div class="table-wrap"><table class="table"><thead><tr>'
     + '<th>Purok</th><th>Code</th><th>Residents</th><th>Pending reports</th><th>Status</th><th class="ta-r">Actions</th>'
     + '</tr></thead><tbody>'
-    + state.zones.map((z) => `
+    + pageRows.map((z) => `
       <tr>
         <td><b>${escapeHtml(z.name)}</b>${z.description ? `<div class="sub">${escapeHtml(z.description)}</div>` : ''}</td>
         <td class="mono">${escapeHtml(z.code)}</td>
@@ -810,8 +834,17 @@ function renderPurokList() {
           <button class="ic-btn" title="${z.is_active ? 'Deactivate' : 'Activate'}" data-act="toggle-purok" data-id="${z.id}">${z.is_active ? icon('eyeOff') : icon('eye')}</button>
         </td>
       </tr>`).join('')
-    + '</tbody></table></div>';
+    + '</tbody></table></div>'
+    + `<div class="filter-bar mt-2" style="justify-content:space-between">
+        <button class="btn btn--ghost btn--sm" type="button" ${state.purokPage <= 1 ? 'disabled' : ''} onclick="purokPrev()">Previous</button>
+        <span class="mono" style="font-size:12px;color:var(--muted)">Page ${state.purokPage} of ${totalPages}</span>
+        <button class="btn btn--ghost btn--sm" type="button" ${state.purokPage >= totalPages ? 'disabled' : ''} onclick="purokNext()">Next</button>
+      </div>`;
+
 }
+
+function purokPrev() { state.purokPage = Math.max(1, state.purokPage - 1); renderPurokList(); }
+function purokNext() { state.purokPage++; renderPurokList(); }
 
 function openPurok(id) {
   document.getElementById('purokForm').reset();
@@ -851,10 +884,16 @@ function renderWasteList() {
     el.innerHTML = '<div class="empty">No waste types yet.</div>';
     return;
   }
+  const totalPages = Math.max(1, Math.ceil(state.wasteTypes.length / state.pageSize));
+  if (state.wastePage > totalPages) state.wastePage = totalPages;
+  if (state.wastePage < 1) state.wastePage = 1;
+  const start = (state.wastePage - 1) * state.pageSize;
+  const pageRows = state.wasteTypes.slice(start, start + state.pageSize);
+
   el.innerHTML = '<div class="table-wrap"><table class="table"><thead><tr>'
     + '<th>Code</th><th>Display name</th><th>Order</th><th>Status</th><th class="ta-r">Actions</th>'
     + '</tr></thead><tbody>'
-    + state.wasteTypes.map((w) => `
+    + pageRows.map((w) => `
       <tr>
         <td class="mono">${escapeHtml(w.code)}</td>
         <td><b>${escapeHtml(w.name)}</b></td>
@@ -865,8 +904,17 @@ function renderWasteList() {
           <button class="ic-btn" title="${w.is_active ? 'Deactivate' : 'Activate'}" data-act="toggle-waste" data-id="${w.id}">${w.is_active ? icon('eyeOff') : icon('eye')}</button>
         </td>
       </tr>`).join('')
-    + '</tbody></table></div>';
+    + '</tbody></table></div>'
+    + `<div class="filter-bar mt-2" style="justify-content:space-between">
+        <button class="btn btn--ghost btn--sm" type="button" ${state.wastePage <= 1 ? 'disabled' : ''} onclick="wastePrev()">Previous</button>
+        <span class="mono" style="font-size:12px;color:var(--muted)">Page ${state.wastePage} of ${totalPages}</span>
+        <button class="btn btn--ghost btn--sm" type="button" ${state.wastePage >= totalPages ? 'disabled' : ''} onclick="wasteNext()">Next</button>
+      </div>`;
+
 }
+
+function wastePrev() { state.wastePage = Math.max(1, state.wastePage - 1); renderWasteList(); }
+function wasteNext() { state.wastePage++; renderWasteList(); }
 
 function openWaste(id) {
   document.getElementById('wasteForm').reset();
@@ -932,7 +980,7 @@ function bindFilters() {
     document.getElementById(id).addEventListener('change', renderScheduleList));
 
   ['dispatchFilterZone', 'dispatchFilterStatus'].forEach((id) =>
-    document.getElementById(id).addEventListener('change', renderDispatchList));
+    document.getElementById(id).addEventListener('change', () => { state.dispatchPage = 1; renderDispatchList(); }));
 
   document.getElementById('noticeFilterStatus').addEventListener('change', renderNoticeList);
 
@@ -1286,7 +1334,7 @@ async function loadPreview() {
     const daysEl = document.getElementById('previewDays');
     if (!daysEl) return;
     daysEl.innerHTML = data.grid.map((day) => {
-      const rows = day.waste_types.length ? day.waste_types.map((t) => '<span class="type-dot ' + (TYPE_CLASS[t.code] || 'mixed') + '">' + escapeHtml(t.label) + '</span>').join(' ') : '<span class="muted">—</span>';
+      const rows = day.waste_types.length ? day.waste_types.map((t) => '<span class="type-dot ' + (TYPE_CLASS[t.code] || 'mixed') + '">' + escapeHtml(t.label) + '</span>').join(' ') : '<span class="muted">ï¿½</span>';
       return '<div class="sched-day"><div class="sd-head"><b>' + escapeHtml(day.label) + '</b> <span class="mono" style="font-size:11px">' + escapeHtml(day.date || '') + '</span></div><div class="sched-day-row">' + rows + '</div></div>';
     }).join('');
   } catch (err) { /* ignore */ }
